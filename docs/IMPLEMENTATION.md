@@ -58,9 +58,30 @@
 - 카드 응답의 `editionNo`는 호환성을 위해 상수 1 유지(스키마에서는 제거됨).
 - 테스트 하니스(단일 DB 전제)는 2-DB 전환이 필요해 후속 단계로 분리 — 프로덕션 이미지 빌드는 `-x test`라 차단 없음.
 
+## 2026-07-16 — 프로덕션 롤링 배포 (무중단)
+
+1. compose에 CARD_DB_* env 전달 추가(app/app2), prod config는 `CARD_DB_HOST` env로만 활성화되게 게이트.
+2. 운영 .env에 CARD_DB_* 주입(비밀번호는 card_cloud .env에서 파일 간 복사, 채팅 비노출).
+3. 이미지 빌드로 컴파일 검증(1건 수정: issueCards enrich 타입) 후 app → nginx reload → app2 → reload 순 롤링 교체.
+   deploy.sh는 서버 git 자격증명 부재로 git pull 단계에서 실패 → 스크립트의 update() 단계를 수동 동일 수행.
+   (서버 .git/info/exclude에 배포 산출물 패턴 추가로 dirty-guard 정리)
+4. 검증: 양 replica healthy, /api/v1/card-gatcha/policy 401(라우트 활성, 503 스텁 아님),
+   card_cloud에 api 커넥션 확립, saga reconciler 기동 로그, 실 5xx 0건.
+5. 운영 편입: foxya-db-backup.sh에 card_cloud 추가(실행 검증 — 로컬 백업 정상. 단, S3 오프사이트는
+   2026-07-10부터 IAM PutObject 거부로 기존부터 실패 중 — 별도 이슈),
+   alarm FOXYA_CRITICAL_LOG_PATTERNS에 CARD_GATCHA_SAGA_ALERT 등록 + 알람 재기동.
+
+## 2026-07-16 — V3: 게임 속성 확장
+
+- 요구: 패시브 스킬, 사용 코스트(하스스톤류), 공격력/방어력/체력, 직업군, 고유카드번호, 등급/넘버링/이름/시즌.
+- V3 마이그레이션 적용: `gatcha_job_classes`, `gatcha_skills`(+params JSONB), `gatcha_design_skills`(M:N),
+  `gatcha_designs`에 play_cost/attack/defense/hp/job_class_id. 매핑표는 DESIGN.md §4.1.
+- fox_coin 카드 조회/뽑기 응답에 전투 속성 노출(디자인 조인) 후 롤링 재배포 완료.
+- 스탯·스킬 값 입력은 관리자 API(다음 단계)로.
+
 ## 다음 단계
 
-1. 서버 .env에 CARD_DB_* 추가 + docker-compose.prod.yml env 전달 + 롤링 배포(deploy.sh update)
-2. 실배포 검증: /policy 확률 표시, 1/10연차, 잔고 차감/멱등키, 등급별 보유 조회, 사가 강제 실패 주입
-3. coin_csms 관리자 API(카드 추가·발행량 증량·확률 변경·시즌 관리)
-4. 백업·exporter·알람 등록, 테스트 하니스 2-DB 전환
+1. coin_csms 관리자 API: 카드 추가 · 발행량 증량 · 확률 변경 · 시즌 관리 · 스탯/스킬/직업군 등록
+2. 실사용 검증: 실계정으로 1/10연차·잔고 차감·멱등키·등급별 보유 조회·소진/사가 시나리오
+3. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
+4. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — 7/10부터 실패 중
