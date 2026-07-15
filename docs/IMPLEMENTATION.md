@@ -129,8 +129,22 @@ csms: `PATCH /seasons/{code}/rarities/{rarity}` — **합성 성공률(upgradeSu
 
 개선 메모: 뽑기 직후 응답의 cards에는 스탯 미포함(INSERT RETURNING 경로) — 목록/상세/멱등재조회엔 포함됨. 필요 시 발급 트랜잭션 말미에 조인 재조회로 통일.
 
+## 2026-07-16 — 라우팅 페이지별 미개발 API 점검 + 프론트 실연동 (배포 완료)
+
+점검 결과: 프론트 전 페이지가 더미/localStorage 기반이었고, 합성은 **클라이언트 랜덤 시뮬레이션**(서버 미호출)이었음.
+백엔드 갭 2건 보완: GET /policy에 upgradePolicy(합성 확률표) 포함, 뽑기 직후 응답에도 스탯 포함(조인 재조회로 통일).
+
+프론트 연동(fox_coin_frontend 5dc09ca2, deploy-docker.sh로 배포·라이브 확인):
+- `cardGatchaApi` 신설(policy/open/upgrade/cards/detail — auth·디바이스 헤더 포함 apiClient 경유)
+- 더미 기본값 false로 전환(명시적 VITE_CARD_GATCHA_USE_DUMMY_DATA=true 또는 전역 더미 모드에서만 더미)
+- 보유 카드 = 서버 단일 진실(GET /cards), 뽑기 = POST /open(멱등키), 합성 = POST /upgrade(서버 판정)
+- 확률표/합성표 = useGatchaPolicy 훅(서버 가변 확률, 로딩 전 정적 폴백), 랜딩 잔고 = 실 KORI 지갑
+- 상세보기 = cardId 쿼리 기반 렌더(서버 카드), 합성 결과 화면 실모드 지원
+- 스모크: 라이브에서 policy upgradePolicy steps 6종·확률 정상 응답 확인
+
 ## 다음 단계
 
-1. 프론트 연동: 유저 화면(/card-gatcha/*) + 관리자 콘솔 페이지 — API 계약 확정됨
-2. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
-3. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — 7/10부터 실패 중 / csms 파일 로그 권한
+1. 관리자 콘솔 카드 관리 화면(미개발) — csms API 계약은 확정
+2. 카드 상세 화면에 스킬/스탯 표기 확장(GET /cards/{id}의 skills 활용)
+3. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
+4. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — AWS 콘솔 조치 대기
