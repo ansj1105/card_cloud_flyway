@@ -130,16 +130,17 @@
 
 - [x] 설계 문서 (본 문서)
 - [x] card_cloud_flyway 리포: gradle 스캐폴드 + V1 스키마 + V2 S01 시드
-- [ ] foxya 호스트: card-postgres 컨테이너 구축(compose, mem 1G 상한, 127.0.0.1:15433) + role/db 생성
-- [ ] flyway migrate 실행 → 스키마/시드 검증
-- [ ] fox_coin: PgPool #2(card_cloud) 설정 + cardgatcha 리포지토리 신규 DB 전환
-- [ ] fox_coin: 하드코딩 Rarity/CardTemplate enum → DB 조회(TTL 캐시) 교체
-- [ ] fox_coin: 선차감-후발급 사가 + 보정 배치 + PENDING 알람
-- [ ] fox_coin: 마이카드 등급별 조회 API (denorm 인덱스 활용)
+- [x] foxya 호스트: card-postgres 컨테이너 구축(compose, mem 1G 상한, 로컬 15433) + role/db 생성
+- [x] flyway migrate 실행 → 스키마/시드 검증 (등급7·디자인70·총발행35,000, 감사트리거·원자할당·감축가드 실동작 확인)
+- [x] fox_coin: PgPool #2(carddb 설정/CARD_DB_* env) + cardgatcha 리포지토리 신규 DB 전환 — 미설정 시 가챠만 503, 타 API 무영향(무중단 도입)
+- [x] fox_coin: 하드코딩 Rarity/CardTemplate enum → card_cloud 조회(TTL 60s 캐시, 발급 정합성은 원자 카운터 담당) 교체
+- [x] fox_coin: 선차감-후발급 사가(PENDING→CHARGED→COMPLETED / FAILED / COMPENSATED, CAS 전환+멱등 환불) + 60s 보정배치 + CARD_GATCHA_SAGA_ALERT 로그
+- [x] fox_coin: GET /api/v1/card-gatcha/cards(등급별 보유 조회) + GET /policy(확률·재고, rates 화면용)
 - [ ] coin_csms: 관리자 API(카드 추가/발행량 증량/확률 변경/시즌)
-- [ ] 기존 V146 데이터 이관 스크립트 + coin_system_cloud 테이블 정리(보존→제거)
-- [ ] 백업(foxya-db-backup.sh에 card_cloud 추가) + postgres-exporter 등록 + Grafana/알람
-- [ ] 부하·경합·소진·사가 크래시 검증 후 오픈
+- [x] 기존 V146 데이터 이관 — **불필요 확인**: 프로덕션 coin_system_cloud에 card_gatcha 테이블 자체가 없음(미출시). fox_coin 리포의 V146 마이그레이션 파일은 프로덕션 적용 전 제거 예정
+- [ ] fox_coin 테스트 하니스 2-DB 전환(HandlerTestBase에 card_cloud 테스트 DB + 시드 재작성) — 로컬 PG 필요, 후속
+- [ ] 백업(foxya-db-backup.sh에 card_cloud 추가) + postgres-exporter 등록 + Grafana/알람 패턴(CARD_GATCHA_SAGA_ALERT) 등록
+- [ ] 서버 env(CARD_DB_*)/compose 반영 → 롤링 배포 → 부하·경합·소진·사가 검증 후 오픈
 
 ## 9. 운영 체크리스트
 
