@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+build/
+*.iml
+.idea/
+*.class
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
+

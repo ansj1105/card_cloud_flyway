@@ -1,0 +1,82 @@
+plugins {
+    id 'java'
+    id 'org.flywaydb.flyway' version '9.22.3'
+}
+
+group = 'com.cardcloud'
+version = '1.0.0'
+
+def resolveSetting = { String propName, List<String> envNames, String defaultValue = null ->
+    if (gradle.startParameter.projectProperties.containsKey(propName)) {
+        String value = gradle.startParameter.projectProperties[propName]
+        if (value != null && !value.isBlank()) {
+            return value
+        }
+    }
+    for (String envName : envNames) {
+        String value = System.getenv(envName)
+        if (value != null && !value.isBlank()) {
+            return value
+        }
+    }
+    if (project.hasProperty(propName)) {
+        String value = project.property(propName).toString()
+        if (value != null && !value.isBlank()) {
+            return value
+        }
+    }
+    return defaultValue
+}
+
+def dbHost = resolveSetting('db.host', ['DB_ADMIN_HOST', 'DB_HOST'], '127.0.0.1')
+def dbPort = resolveSetting('db.port', ['DB_ADMIN_PORT', 'DB_PORT'], '15433')
+def dbName = resolveSetting('db.name', ['DB_NAME'], 'card_cloud')
+def dbUser = resolveSetting('db.user', ['DB_USER'], 'card_cloud')
+def dbPassword = resolveSetting('db.password', ['DB_PASSWORD'], null)
+def dbUrl = resolveSetting('db.url', ['DB_URL'], null) ?: "jdbc:postgresql://${dbHost}:${dbPort}/${dbName}"
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+    // PostgreSQL JDBC Driver
+    implementation 'org.postgresql:postgresql:42.6.0'
+    
+    // Flyway Core
+    implementation 'org.flywaydb:flyway-core:9.22.3'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    testImplementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // Test Dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testImplementation 'org.testcontainers:testcontainers:1.19.3'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+    testImplementation 'org.testcontainers:postgresql:1.19.3'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+}
+
+flyway {
+    url = dbUrl
+    user = dbUser
+    password = dbPassword
+    locations = ['filesystem:src/main/resources/db/migration']
+    encoding = 'UTF-8'
+    validateOnMigrate = true
+    baselineOnMigrate = true
+    cleanDisabled = false  // clean 명령 활성화 (개발 환경용)
+    // 기존 DB를 Flyway에 맞출 때: -Pflyway.baselineVersion=42 로 baseline 실행
+    baselineVersion = project.findProperty('flyway.baselineVersion') ?: '1'
+}
+
+// Test configuration - only needed for running tests
+if (project.hasProperty('runTests')) {
+    test {
+        useJUnitPlatform()
+    }
+}
