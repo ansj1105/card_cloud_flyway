@@ -79,9 +79,29 @@
 - fox_coin 카드 조회/뽑기 응답에 전투 속성 노출(디자인 조인) 후 롤링 재배포 완료.
 - 스탯·스킬 값 입력은 관리자 API(다음 단계)로.
 
+## 2026-07-16 — coin_csms 관리자 API (커밋 b34ae0a, 배포 완료)
+
+`/api/v2/admin/card-gatcha/*` (ADMIN/SUPER_ADMIN, csms JWT):
+
+| 엔드포인트 | 기능 |
+|-----------|------|
+| GET /overview?seasonCode= | 시즌·등급(확률/재고)·디자인·직업군·스킬 일괄 조회 (콘솔 화면용) |
+| POST /designs | **카드 추가** — rarity/name/editionSize/스탯/직업군/이미지, design_no·design_id 자동 채번 |
+| PATCH /designs/{id}/edition-size | **발행량 증량** — 발급수 미만 감축은 트리거 차단→400 안내 |
+| PUT /seasons/{code}/weights | **확률 변경** — 전체 등급 세트 필수 + 합계 1,000,000(100%) 강제 |
+| PATCH /designs/{id}/attributes | 코스트/공/방/체/직업군/이미지/이름/상태 수정 |
+| PUT /designs/{id}/skills | 스킬 세트 교체(배열 순서=슬롯) |
+| POST /seasons, PATCH /seasons/{code}/status | 시즌 생성(DRAFT)/상태 전환 |
+| POST /job-classes, POST /skills | 직업군/스킬 사전 등록 |
+
+- 이중 감사: card_cloud 트리거(rate/supply audit) + 코인DB admin_activity_logs(행위자·IP). 감사 기록 실패 시 실패 응답.
+- CARD_DB_HOST env 게이트 — 미설정이면 카드 관리 API만 비활성.
+- csms-api 단일 컨테이너 재생성으로 배포(관리자 콘솔만 ~20초 순단, 유저 API 무관). 라우트 401(활성)·env·DNS 확인.
+- 참고(기존 이슈): csms 파일 로그(logs/csms.log)는 3월부터 권한 문제로 미기록(stdout 수집은 정상) — uid 일치 확인에도 재현, 후속 조사 필요.
+
 ## 다음 단계
 
-1. coin_csms 관리자 API: 카드 추가 · 발행량 증량 · 확률 변경 · 시즌 관리 · 스탯/스킬/직업군 등록
-2. 실사용 검증: 실계정으로 1/10연차·잔고 차감·멱등키·등급별 보유 조회·소진/사가 시나리오
-3. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
-4. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — 7/10부터 실패 중
+1. 실사용 검증: 관리자 콘솔에서 overview/카드추가/확률변경, 실계정으로 1/10연차·멱등키·등급별 보유·소진/사가 시나리오
+2. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
+3. 관리자 콘솔 프론트(fox_coin_frontend admin 페이지) 연동
+4. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — 7/10부터 실패 중 / csms 파일 로그 권한

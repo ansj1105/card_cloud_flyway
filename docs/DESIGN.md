@@ -152,7 +152,7 @@
 - [x] fox_coin: 하드코딩 Rarity/CardTemplate enum → card_cloud 조회(TTL 60s 캐시, 발급 정합성은 원자 카운터 담당) 교체
 - [x] fox_coin: 선차감-후발급 사가(PENDING→CHARGED→COMPLETED / FAILED / COMPENSATED, CAS 전환+멱등 환불) + 60s 보정배치 + CARD_GATCHA_SAGA_ALERT 로그
 - [x] fox_coin: GET /api/v1/card-gatcha/cards(등급별 보유 조회) + GET /policy(확률·재고, rates 화면용)
-- [ ] coin_csms: 관리자 API(카드 추가/발행량 증량/확률 변경/시즌)
+- [x] coin_csms: 관리자 API `/api/v2/admin/card-gatcha/*` — overview·카드추가·발행량증량·확률변경(합계 100% 강제)·시즌·직업군·스킬·스탯, admin_activity_logs 감사 (커밋 b34ae0a, 배포됨)
 - [x] 기존 V146 데이터 이관 — **불필요 확인**: 프로덕션 coin_system_cloud에 card_gatcha 테이블 자체가 없음(미출시). fox_coin 리포의 V146 마이그레이션 파일은 프로덕션 적용 전 제거 예정
 - [ ] fox_coin 테스트 하니스 2-DB 전환(HandlerTestBase에 card_cloud 테스트 DB + 시드 재작성) — 로컬 PG 필요, 후속
 - [ ] 백업(foxya-db-backup.sh에 card_cloud 추가) + postgres-exporter 등록 + Grafana/알람 패턴(CARD_GATCHA_SAGA_ALERT) 등록
