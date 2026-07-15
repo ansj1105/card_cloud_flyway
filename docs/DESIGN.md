@@ -90,6 +90,22 @@
 - user_id는 FK 없는 BIGINT (코인DB users 소유 — DB 분리의 대가, JWT userId로 앱 레이어 보장).
 - V2 시드: S01 시즌 = 등급 7종(COM 72% ~ MYT 0.001%) × 디자인 10종 × 에디션 500장 = 35,000장.
 
+### 4.1 카드 속성 매핑 (V3: 게임 속성 확장)
+
+| 요구 속성 | 스키마 위치 | 비고 |
+|-----------|------------|------|
+| 등급 | `gatcha_cards.rarity_code/label` (비정규화) · `gatcha_rarities` | 등급별 보유 조회 인덱스 |
+| 넘버링 | `gatcha_cards.serial_no` | 에디션 내 번호 (예: 23/500), 원자 할당 |
+| 카드넘버(고유) | `gatcha_cards.card_code` | `KOR-S01-COM-0001-023` 형식, 전역 UNIQUE |
+| 이름 | `gatcha_designs.name` → `gatcha_cards.card_name` | |
+| 시즌 | `gatcha_cards.season_code` · `gatcha_seasons` | |
+| 사용 코스트 | `gatcha_designs.play_cost` (V3) | 하스스톤류 소환 코스트 — 뽑기 비용(draw_cost)과 별개 |
+| 공격력/방어력/체력 | `gatcha_designs.attack/defense/hp` (V3) | 디자인 레벨 스탯(같은 디자인 = 같은 스탯) |
+| 직업군 | `gatcha_designs.job_class_id` → `gatcha_job_classes` (V3) | 운영 중 직업 추가 가능 |
+| 패시브 스킬 | `gatcha_skills` + `gatcha_design_skills` (V3) | M:N — 스킬 재사용, kind=PASSIVE/ACTIVE/AURA/TRIGGER, params JSONB |
+
+스탯·코스트·스킬은 전부 운영 데이터(기본 0/미설정) — 관리자 API로 등록·수정하며 코드 재배포 불필요.
+
 ## 5. 뽑기 알고리즘
 
 ```
