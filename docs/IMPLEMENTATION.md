@@ -99,9 +99,38 @@
 - csms-api 단일 컨테이너 재생성으로 배포(관리자 콘솔만 ~20초 순단, 유저 API 무관). 라우트 401(활성)·env·DNS 확인.
 - 참고(기존 이슈): csms 파일 로그(logs/csms.log)는 3월부터 권한 문제로 미기록(stdout 수집은 정상) — uid 일치 확인에도 재현, 후속 조사 필요.
 
+## 2026-07-16 — V4(카드 목업 반영) + 상세보기 + 합성확률 관리 + e2e 검증 완료
+
+카드 목업 점검 → V4 마이그레이션: MOV(move)/RNG(range) 스탯, 종족(species)·소속(faction),
+스킬 코스트/사거리(gatcha_skills.cost/skill_range), 시즌 표시명(gatcha_seasons.name, S01=ARENA).
+fox_coin: `GET /cards/{id}` 상세보기(스탯·스킬 배열·에디션·시즌명), 목록/상세에 V4 필드 노출.
+csms: `PATCH /seasons/{code}/rarities/{rarity}` — **합성 성공률(upgradeSuccessBp) 운영 변경**, 디자인/스킬 V4 필드.
+
+수정된 버그: `:param IS NULL` 42P08(명시 캐스트), insertDesign V4 파라미터 바인딩 누락, jsonb 파라미터는 JsonObject로 바인딩.
+
+### e2e 검증 결과 (2026-07-16, 실계정 — 관리자 콘솔 + 유저 플로우)
+
+| 시나리오 | 결과 |
+|----------|------|
+| 관리자 로그인 → overview (시즌/등급/디자인 70/스킬) | ✅ |
+| **뽑기 확률 변경** (COM 72→71.9%) → 유저 /policy에 실반영 | ✅ (합계≠100% 거절도 확인) |
+| **합성 성공률 변경** (COM 65→70%) → 실제 합성 판정에 70% 사용 | ✅ |
+| 카드 추가 (목업 스탯 전체: cost2/atk5/hp5/mov2/rng1/Cat/Korion/SUPPORT) | ✅ design_no 자동채번 |
+| 발행량 증량 2→4 (+감축 차단 트리거) | ✅ supply_audit 기록 |
+| 직업군/스킬 등록 + 디자인 스킬 세트(슬롯 순서) | ✅ |
+| 1연차: 1 KORI 차감, COMPLETED, 카드 발급 | ✅ |
+| 멱등키 재요청: 동일 drawId, 추가 차감 없음 | ✅ |
+| 10연차: 10 KORI, 10장 (COM5/MID4/ADV1) | ✅ |
+| 등급별 보유 조회 + 카드 상세보기(스탯/에디션/시즌) | ✅ |
+| 합성: COM 3장(서로 다른 디자인) → CONSUMED + MID 카드 발급 | ✅ |
+| 사가 정합: draws 전부 COMPLETED, PENDING/CHARGED 잔류 0, 지갑 차감 2건·환불 0 | ✅ |
+| 감사: rate_audit 4건(변경+원복), supply_audit, admin_activity_logs(CARD_*) | ✅ |
+| 원상복구: 확률/성공률 원복, 테스트 카드 RETIRED | ✅ |
+
+개선 메모: 뽑기 직후 응답의 cards에는 스탯 미포함(INSERT RETURNING 경로) — 목록/상세/멱등재조회엔 포함됨. 필요 시 발급 트랜잭션 말미에 조인 재조회로 통일.
+
 ## 다음 단계
 
-1. 실사용 검증: 관리자 콘솔에서 overview/카드추가/확률변경, 실계정으로 1/10연차·멱등키·등급별 보유·소진/사가 시나리오
+1. 프론트 연동: 유저 화면(/card-gatcha/*) + 관리자 콘솔 페이지 — API 계약 확정됨
 2. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
-3. 관리자 콘솔 프론트(fox_coin_frontend admin 페이지) 연동
-4. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — 7/10부터 실패 중 / csms 파일 로그 권한
+3. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — 7/10부터 실패 중 / csms 파일 로그 권한

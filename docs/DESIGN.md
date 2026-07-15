@@ -156,7 +156,8 @@
 - [x] 기존 V146 데이터 이관 — **불필요 확인**: 프로덕션 coin_system_cloud에 card_gatcha 테이블 자체가 없음(미출시). fox_coin 리포의 V146 마이그레이션 파일은 프로덕션 적용 전 제거 예정
 - [ ] fox_coin 테스트 하니스 2-DB 전환(HandlerTestBase에 card_cloud 테스트 DB + 시드 재작성) — 로컬 PG 필요, 후속
 - [ ] 백업(foxya-db-backup.sh에 card_cloud 추가) + postgres-exporter 등록 + Grafana/알람 패턴(CARD_GATCHA_SAGA_ALERT) 등록
-- [ ] 서버 env(CARD_DB_*)/compose 반영 → 롤링 배포 → 부하·경합·소진·사가 검증 후 오픈
+- [x] 서버 env(CARD_DB_*)/compose 반영 → 롤링 배포 완료
+- [x] e2e 실사용 검증(2026-07-16): 확률변경(뽑기·합성)→실반영, 카드추가/증량, 1/10연차·멱등·등급별조회·상세보기·합성·사가 정합 — IMPLEMENTATION.md 참조
 
 ## 9. 운영 체크리스트
 
