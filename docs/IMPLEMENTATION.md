@@ -185,3 +185,16 @@ edition-size 4→5→4 왕복 200, editionSize=0 가드 400 정상.
 
 엣지 스모크(실데이터): kpi 200(매출 11 KORI·뽑기 2·보유 9/소모 3·합성 1/1·미수렴 0),
 users 200(1명, 프로필 병합 확인), user cards 200(12장+뽑기 2건), loginId 부분검색 200.
+
+## 2026-07-17 — 테스트 계정 무과금 뽑기 (TEST 시즌, 배포 완료)
+
+- fox_coin d8842724: `users.is_test=1` 계정은 뽑기 시 **KORI 차감/환불 없음**(cost 0 사가,
+  charge_tx_ref "TEST-{drawId}") + **TEST 시즌**(DRAFT — 상용 노출 없음) 재고에서 발급.
+  발급은 상용과 동일 경로(원자 카운터·확률 롤)라 재고가 실제 감소 → 가중치/소진 테스트 가능.
+  합성·/policy도 테스트 계정이면 TEST 카탈로그. 보정배치는 드로우의 season_id로 카탈로그
+  해석(catalogForSeasonId), cost 0 건은 지갑 없이 종결·환불 스킵.
+- TEST 시즌 시드(admin API): 등급 7종 자동 복사(S01 가중치/합성률), 카드 14종(등급별 2종×500장).
+  확률/발행량 변경은 admin 콘솔 시즌 셀렉터에서 TEST 선택.
+- 테스트 계정 3개 지정(is_test=1): jang2020111@gmail.com, jyk860111@gmail.com, ansj110544@gmail.com
+- 검증: 상용 유저 policy S01·비용 1 KORI·재고 무변화 확인. 테스트 계정 실뽑기 검증은
+  해당 계정 로그인 필요(운영자 확인 대기).
