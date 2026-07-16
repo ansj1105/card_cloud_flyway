@@ -148,3 +148,24 @@ csms: `PATCH /seasons/{code}/rarities/{rarity}` — **합성 성공률(upgradeSu
 2. 카드 상세 화면에 스킬/스탯 표기 확장(GET /cards/{id}의 skills 활용)
 3. 테스트 하니스 2-DB 전환(card_cloud 테스트 DB), postgres-exporter card-postgres 등록
 4. (별도 이슈) DB 백업 S3 오프사이트 IAM 권한 복구 — AWS 콘솔 조치 대기
+
+## 2026-07-17 — 관리자 콘솔 카드 관리 화면 (배포 완료)
+
+프론트(fox_coin_frontend 7a12a0a9, 라이브 번들 index-Cs_ttjlU.js):
+- `adminCardGatchaApi` 신설 — /api/v2/admin/card-gatcha/* 전체 계약(overview·카드추가·발행량·속성/스킬·확률세트·합성률·시즌·직업군/스킬)
+- **카드 / 발행량 관리** (`/admin/card-gatcha/designs`): 시즌·등급 필터, 재고 진행바(발급/발행),
+  발행량 증량(발급수 미만 감축 클라+서버 이중 차단), 인라인 속성/스킬 편집, 자동 채번 카드 추가,
+  직업군/스킬 등록 섹션
+- **확률 / 시즌 관리** (`/admin/card-gatcha/rates`): weight 세트 편집(합계 1,000,000 실시간 검증, 미달 시 저장 비활성),
+  등급별 합성 성공률(% 입력 ↔ bp 저장), 시즌 생성/상태 전환(확인 다이얼로그)
+- 사이드바(KORION Wallet 콘솔)에 '카드 가챠 관리' 그룹 추가
+
+백엔드 보완(coin_csms cb3bdbc, 025156d):
+- 시즌 생성 시 최신 시즌(ACTIVE 우선)의 등급 세트 복사 — 등급 없는 시즌은 구성 불가였던 갭
+- listSkills가 이중 인코딩된 jsonb params(문자열 "{}")에도 500 없이 정규화해 읽도록 수정
+
+데이터 보정: V5 마이그레이션(gatcha_skills.params 문자열→객체) 작성·푸시 — **서버 flyway migrate 실행은 대기**
+(읽기 정규화로 증상은 해소, 실행은 운영자 승인 후).
+
+엣지(korion.io.kr) 경유 스모크: 로그인→overview 200(시즌1/등급7/디자인71/직업군1/스킬2),
+edition-size 4→5→4 왕복 200, editionSize=0 가드 400 정상.
