@@ -169,3 +169,19 @@ csms: `PATCH /seasons/{code}/rarities/{rarity}` — **합성 성공률(upgradeSu
 
 엣지(korion.io.kr) 경유 스모크: 로그인→overview 200(시즌1/등급7/디자인71/직업군1/스킬2),
 edition-size 4→5→4 왕복 200, editionSize=0 가드 400 정상.
+
+## 2026-07-17 — 가챠 대시보드(KPI) + 유저 카드 관리 (배포 완료)
+
+백엔드(coin_csms 75611bb):
+- `GET /api/v2/admin/card-gatcha/kpi` — 매출/뽑기(완료·진행중·실패)/발급·보유·소모/보유 유저/합성 성공률,
+  등급별 현황(발급·보유·소모·공급·잔여), 14일 일별 추이, ACTIVE 재고 임박 TOP5
+- `GET /users` — 카드 보유 유저(보유량순, 페이지네이션). q가 숫자면 유저ID, 문자면 코인DB
+  login_id/nickname/name 부분일치 검색. 코인DB 프로필(loginId/nickname/name) 병합.
+- `GET /users/:userId/cards` — 유저 카드 전체(최근 200) + 최근 뽑기 10건
+
+프론트(fox_coin_frontend 11f097b9): 사이드바 '카드 가챠 관리' 하위탭 4종 완성 —
+가챠 대시보드(KPI 타일 6종 + 추이 바 + 등급별 + 재고 임박) / 유저 카드 관리(검색·등급 칩·행 펼침) /
+카드·발행량 / 뽑기·합성 확률·시즌. 전부 --admin-* 테마 변수 기반(다크/라이트 대응).
+
+엣지 스모크(실데이터): kpi 200(매출 11 KORI·뽑기 2·보유 9/소모 3·합성 1/1·미수렴 0),
+users 200(1명, 프로필 병합 확인), user cards 200(12장+뽑기 2건), loginId 부분검색 200.
