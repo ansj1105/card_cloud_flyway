@@ -13,7 +13,10 @@
 V1__20260716_Create_card_cloud_schema.sql   # 스키마 (시즌/등급·확률/디자인·재고/뽑기/카드/합성 + 감사 트리거)
 V2__20260716_Seed_season_s01.sql            # S01 시드 (등급 7종 × 디자인 10종 × 에디션 500 = 35,000장)
 V8__20260720_Normalize_card_serial_codes.sql # 카드 식별 정책: KORIS001COM0001 형식으로 design_id/card_code 정규화
+V9__20260720_Add_design_passive_text.sql     # 카드 표면용 패시브 문구
 ```
+
+롤백 SQL은 `src/main/resources/db/rollback/`에 같은 버전명으로 둔다.
 
 핵심 원칙:
 
