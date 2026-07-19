@@ -85,12 +85,23 @@ BEGIN
        SET consumed_card_design_ids = mapped.next_design_ids
       FROM (
           SELECT
-              a.id,
+              normalized.id,
               jsonb_agg(COALESCE(to_jsonb(m.new_design_id), value) ORDER BY ordinality) AS next_design_ids
-          FROM gatcha_upgrade_attempts a
-          CROSS JOIN LATERAL jsonb_array_elements(a.consumed_card_design_ids) WITH ORDINALITY AS ids(value, ordinality)
+          FROM (
+              SELECT
+                  id,
+                  CASE
+                      WHEN jsonb_typeof(consumed_card_design_ids) = 'array' THEN consumed_card_design_ids
+                      WHEN jsonb_typeof(consumed_card_design_ids) = 'string'
+                           AND left(consumed_card_design_ids #>> '{}', 1) = '['
+                          THEN (consumed_card_design_ids #>> '{}')::jsonb
+                      ELSE jsonb_build_array(consumed_card_design_ids #>> '{}')
+                  END AS design_ids
+              FROM gatcha_upgrade_attempts
+          ) normalized
+          CROSS JOIN LATERAL jsonb_array_elements(normalized.design_ids) WITH ORDINALITY AS ids(value, ordinality)
           LEFT JOIN tmp_gatcha_design_code_map m ON m.old_design_id = trim(both '"' FROM ids.value::text)
-          GROUP BY a.id
+          GROUP BY normalized.id
       ) mapped
      WHERE a.id = mapped.id
        AND a.consumed_card_design_ids IS DISTINCT FROM mapped.next_design_ids;
