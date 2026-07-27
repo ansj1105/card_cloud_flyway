@@ -96,7 +96,8 @@
 |-----------|------------|------|
 | 등급 | `gatcha_cards.rarity_code/label` (비정규화) · `gatcha_rarities` | 등급별 보유 조회 인덱스 |
 | 넘버링 | `gatcha_cards.serial_no` | 에디션 내 번호 (예: 23/500), 원자 할당 |
-| 카드넘버(고유) | `gatcha_cards.card_code` | `KOR-S01-COM-0001-023` 형식, 전역 UNIQUE |
+| 카드 디자인 ID | `gatcha_cards.card_code` · `gatcha_cards.design_id` | `KORIS0001COM0001` 형식. V8 이후 `card_code`는 디자인 식별자와 동일 |
+| 케이스 ID(고유) | `gatcha_cards.case_id` | NFC 발행용 개별 카드 식별자. `CASE-<design_id>-<serial_no 6자리>` 형식, 전역 UNIQUE |
 | 이름 | `gatcha_designs.name` → `gatcha_cards.card_name` | |
 | 시즌 | `gatcha_cards.season_code` · `gatcha_seasons` | |
 | 사용 코스트 | `gatcha_designs.play_cost` (V3) | 하스스톤류 소환 코스트 — 뽑기 비용(draw_cost)과 별개 |

@@ -14,6 +14,8 @@ V1__20260716_Create_card_cloud_schema.sql   # 스키마 (시즌/등급·확률/�
 V2__20260716_Seed_season_s01.sql            # S01 시드 (등급 7종 × 디자인 10종 × 에디션 500 = 35,000장)
 V8__20260720_Normalize_card_serial_codes.sql # 카드 식별 정책: KORIS001COM0001 형식으로 design_id/card_code 정규화
 V9__20260720_Add_design_passive_text.sql     # 카드 표면용 패시브 문구
+V11__20260728_Add_gatcha_card_case_id.sql    # NFC 발행용 개별 카드 케이스 ID
+V12__20260728_Normalize_card_design_ids_to_four_digit_season.sql # 시즌 4자리 카드 ID: KORIS0001COM0001
 ```
 
 롤백 SQL은 `src/main/resources/db/rollback/`에 같은 버전명으로 둔다.
@@ -25,8 +27,9 @@ V9__20260720_Add_design_passive_text.sql     # 카드 표면용 패시브 문구
 - 이중발급은 `UNIQUE(design_id, serial_no)`가 최후 방어
 - 뽑기마다 `rate_snapshot`(당시 확률표) 저장 — 확률 변경 이후에도 과거 뽑기 증빙 가능
 - 발행량은 발급수 미만으로 감축 불가 (트리거 가드)
-- 카드 식별자는 `<KORION prefix><season><rarity><design number>` 형식이다. 예: `KORIS001COM0001`.
+- 카드 식별자는 `<KORION prefix><season><rarity><design number>` 형식이다. 예: `KORIS0001COM0001`.
 - `gatcha_cards.card_code`는 카드 디자인 식별자와 동일하게 저장한다. 개별 발급 번호는 `serial_no`가 소유하고, 이중발급 방어는 `UNIQUE(design_id, serial_no)`가 담당한다.
+- NFC 발행용 개별 카드 식별자는 `gatcha_cards.case_id`가 담당한다. 기본 형식은 `CASE-<design_id>-<serial_no 6자리>`이며 전역 UNIQUE다.
 
 ## 실행
 
