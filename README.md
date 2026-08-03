@@ -23,13 +23,15 @@ V12__20260728_Normalize_card_design_ids_to_four_digit_season.sql # 시즌 4자�
 핵심 원칙:
 
 - 확률(`gatcha_rarities.weight`)·발행량(`gatcha_designs.edition_size`)은 **가변 운영 데이터** — 변경은 DB 트리거가 감사 테이블(`gatcha_rate_audit`, `gatcha_supply_audit`)에 자동 기록
-- 재고/시리얼은 `UPDATE ... SET issued_count = issued_count + 1 WHERE issued_count < edition_size RETURNING` 원자 할당 (락 없음)
-- 이중발급은 `UNIQUE(design_id, serial_no)`가 최후 방어
+- `issued_count`는 신규 시리얼의 누적 고수위 값이며, 현재 재고는 `OWNED`/`LOCKED`/`BURNED` 카드의 점유 수로 계산
+- 합성으로 `CONSUMED`된 비민팅 카드는 감사 이력을 보존하면서 동일 디자인/시리얼 재고로 즉시 반환
+- 시리얼 할당은 디자인 행 잠금 후 반환 시리얼을 우선 재사용하고, 없으면 `issued_count` 다음 값을 배정
+- 이중발급은 활성 카드에만 적용되는 부분 UNIQUE 인덱스 `(design_id, serial_no)`와 `case_id`가 최후 방어
 - 뽑기마다 `rate_snapshot`(당시 확률표) 저장 — 확률 변경 이후에도 과거 뽑기 증빙 가능
 - 발행량은 발급수 미만으로 감축 불가 (트리거 가드)
 - 카드 식별자는 `<KORION prefix><season><rarity><design number>` 형식이다. 예: `KORIS0001COM0001`.
-- `gatcha_cards.card_code`는 카드 디자인 식별자와 동일하게 저장한다. 개별 발급 번호는 `serial_no`가 소유하고, 이중발급 방어는 `UNIQUE(design_id, serial_no)`가 담당한다.
-- NFC 발행용 개별 카드 식별자는 `gatcha_cards.case_id`가 담당한다. 기본 형식은 `CASE-<design_id>-<serial_no 6자리>`이며 전역 UNIQUE다.
+- `gatcha_cards.card_code`는 카드 디자인 식별자와 동일하게 저장한다. 개별 발급 번호는 `serial_no`가 소유하고, 이중발급 방어는 현재 점유 상태에 대한 부분 UNIQUE 인덱스 `(design_id, serial_no)`가 담당한다.
+- NFC 발행용 개별 카드 식별자는 `gatcha_cards.case_id`가 담당한다. 기본 형식은 `CASE-<design_id>-<serial_no 6자리>`이며 현재 점유 상태에서 UNIQUE다.
 
 ## 실행
 
